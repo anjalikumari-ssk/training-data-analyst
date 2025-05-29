@@ -45,7 +45,7 @@ class GetTimestampFn(beam.DoFn):
 def run():
     # Command line arguments
     parser = argparse.ArgumentParser(description='Load from Json into BigQuery')
-    parser.add_argument('--project',required=True, help='Specify Google Cloud project')
+    parser.add_argument('--project', required=True, help='Specify Google Cloud project')
     parser.add_argument('--region', required=True, help='Specify Google Cloud region')
     parser.add_argument('--staging_location', required=True, help='Specify Cloud Storage bucket for staging')
     parser.add_argument('--temp_location', required=True, help='Specify Cloud Storage bucket for temp')
@@ -56,12 +56,12 @@ def run():
     opts = parser.parse_args()
 
     # Setting up the Beam pipeline options
-    options = PipelineOptions(save_main_session=True)
+    options = PipelineOptions(save_main_session=False)
     options.view_as(GoogleCloudOptions).project = opts.project
     options.view_as(GoogleCloudOptions).region = opts.region
     options.view_as(GoogleCloudOptions).staging_location = opts.staging_location
     options.view_as(GoogleCloudOptions).temp_location = opts.temp_location
-    options.view_as(GoogleCloudOptions).job_name = '{0}{1}'.format('batch-minute-traffic-pipeline-',time.time_ns())
+    options.view_as(GoogleCloudOptions).job_name = '{0}{1}'.format('batch-minute-traffic-pipeline-', time.time_ns())
     options.view_as(StandardOptions).runner = opts.runner
 
     input_path = opts.input_path
@@ -78,27 +78,25 @@ def run():
                 "name": "timestamp",
                 "type": "STRING"
             },
-
         ]
     }
 
     # Create the pipeline
     p = beam.Pipeline(options=options)
 
-
-
-    (p | 'ReadFromGCS' >> beam.io.ReadFromText(input_path)
-       | 'ParseJson' >> beam.Map(parse_json).with_output_types(CommonLog)
-       | 'AddEventTimestamp' >> beam.Map(add_timestamp)
-       | "WindowByMinute" >> # TODO: Window into Fixed Windows of length 1 minute
-       | "CountPerMinute" >> # TODO: Count number of page views per window using combiner
-       | "AddWindowTimestamp" >> beam.ParDo(GetTimestampFn())
-       | 'WriteToBQ' >> beam.io.WriteToBigQuery(
+    (p
+     | 'ReadFromGCS' >> beam.io.ReadFromText(input_path)
+     | 'ParseJson' >> beam.Map(parse_json).with_output_types(CommonLog)
+     | 'AddEventTimestamp' >> beam.Map(add_timestamp)
+     | "WindowByMinute" >> # TODO: Window into Fixed Windows of length 1 minute
+     | "CountPerMinute" >> # TODO: Count number of page views per window using combiner
+     | "AddWindowTimestamp" >> beam.ParDo(GetTimestampFn())
+     | 'WriteToBQ' >> beam.io.WriteToBigQuery(
             table_name,
             schema=table_schema,
             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
             write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE
-            )
+        )
     )
 
     logging.getLogger().setLevel(logging.INFO)
@@ -107,4 +105,4 @@ def run():
     p.run()
 
 if __name__ == '__main__':
-  run()
+    run()
