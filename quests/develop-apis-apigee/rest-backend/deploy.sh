@@ -15,17 +15,18 @@ fi
 SERVICE_NAME="simplebank-rest"
 SVCACCT_NAME="simplebank-rest"
 SVCACCT_EMAIL="${SVCACCT_NAME}@${GOOGLE_PROJECT_ID}.iam.gserviceaccount.com"
+ARTIFACT_REGISTRY_REGION="${CLOUDRUN_REGION}"
 
 # build image from code
 echo "*** submit build of service ${SERVICE_NAME} to Cloud Build ***"
-gcloud builds submit --tag gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME} \
+gcloud builds submit --tag ${ARTIFACT_REGISTRY_REGION}-docker.pkg.dev/${GOOGLE_PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME} \
   --project=${GOOGLE_PROJECT_ID}
 
 # deploy service
 # NOTE: in a production environment, you would not use max-instances=1
 echo "*** deploy ${SERVICE_NAME} service to ${CLOUDRUN_REGION} with service account ${SVCACCT_EMAIL} ***"
 gcloud run deploy ${SERVICE_NAME} \
-  --image=gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME} \
+  --image=${ARTIFACT_REGISTRY_REGION}-docker.pkg.dev/${GOOGLE_PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME} \
   --platform=managed \
   --max-instances=1 \
   --region=${CLOUDRUN_REGION} \
