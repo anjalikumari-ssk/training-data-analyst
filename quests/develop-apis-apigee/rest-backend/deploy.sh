@@ -17,6 +17,12 @@ SVCACCT_NAME="simplebank-rest"
 SVCACCT_EMAIL="${SVCACCT_NAME}@${GOOGLE_PROJECT_ID}.iam.gserviceaccount.com"
 IMAGE_URI="${CLOUDRUN_REGION}-docker.pkg.dev/${GOOGLE_PROJECT_ID}/${SVCACCT_NAME}/${SERVICE_NAME}"
 
+gcloud artifacts repositories create "${SVCACCT_NAME}" \
+  --repository-format=docker \
+  --location="${CLOUDRUN_REGION}" \
+  --description="Docker repo for ${SERVICE_NAME}" \
+  --project="${GOOGLE_PROJECT_ID}"
+
 # build image from code
 echo "*** submit build of service ${SERVICE_NAME} to Cloud Build ***"
 gcloud builds submit --tag ${IMAGE_URI} \
